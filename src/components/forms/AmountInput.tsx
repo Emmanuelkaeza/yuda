@@ -18,7 +18,7 @@ export default function AmountInput({ value, onChange, error }: AmountInputProps
         onChange={(e) => onChange(e.target.value)}
         placeholder="0.00"
         min="0"
-        step="0.01"
+        step="1"
         required
       />
       {error && <p className="text-sm text-destructive">{error}</p>}

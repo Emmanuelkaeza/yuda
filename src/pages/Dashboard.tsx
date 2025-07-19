@@ -184,7 +184,7 @@ export default function Dashboard() {
         : 0;
 
       // Abonnements actifs aujourd'hui
-      const subscriptionsResponse = await subscriptionService.getPatientSubscriptions('all');
+      const subscriptionsResponse = await subscriptionService.getPatientSubscriptions('7');
       const subscriptions = Array.isArray(subscriptionsResponse) ? subscriptionsResponse : [];
       
       const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
@@ -411,21 +411,13 @@ export default function Dashboard() {
                   <Users className="h-4 w-4 mr-2" />
                   Nouveau Patient
                 </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/patients')}>
+                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/payments')}>
                   <CreditCard className="h-4 w-4 mr-2" />
                   Gérer les Paiements
-                </Button>
-                <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/planning')}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Gérer Planning
                 </Button>
                 <Button variant="success" className="w-full justify-start">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Nouvel Abonnement
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Voir Rapports
                 </Button>
               </CardContent>
             </Card>

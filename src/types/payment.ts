@@ -1,6 +1,6 @@
-export type PaymentMethod = 'cash' | 'card' | 'mobile_money' | 'cinetpay';
-export type PaymentCurrency = 'XOF' | 'USD' | 'EUR';
-export type PaymentType = 'subscription' | 'consultation' | 'treatment' | 'other';
+export type PaymentMethod = 'cash' | 'cinetpay';
+export type PaymentCurrency = 'CDF' | 'USD';
+export type PaymentType = 'consultation';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 export interface Payment {
@@ -10,11 +10,18 @@ export interface Payment {
   method: PaymentMethod;
   type: PaymentType;
   description: string;
-  patientId: string;
+  patientId: number;
   status: PaymentStatus;
   transactionId?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PaymentMetadata {
+  customerName: string;
+  customerEmail: string;
+  returnUrl: string;
+  notifyUrl: string;
 }
 
 export interface CreatePaymentDTO {
@@ -23,7 +30,8 @@ export interface CreatePaymentDTO {
   method: PaymentMethod;
   type: PaymentType;
   description: string;
-  patientId: string;
+  patientId: number;
+  metadata: PaymentMetadata;
 }
 
 export interface PaymentInitResponse {

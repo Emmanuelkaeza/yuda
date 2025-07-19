@@ -4,11 +4,9 @@ import { Patient } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import PatientSearch from "./PatientSearch";
 import AmountInput from "./AmountInput";
-import CurrencySelect from "./CurrencySelect";
 import PaymentMethodSelect from "./PaymentMethodSelect";
-import PaymentTypeSelect from "./PaymentTypeSelect";
+import CurrencySelect from "./CurrencySelect";
 import DescriptionInput from "./DescriptionInput";
 
 interface PaymentFormProps {
@@ -21,11 +19,17 @@ export function PaymentForm({ patient, onSubmit, onCancel }: PaymentFormProps) {
   // État initial
   const initialFormData: CreatePaymentDTO = {
     amount: 0,
-    currency: 'XOF',
-    method: 'cinetpay',
-    type: 'subscription',
+    currency: 'CDF',
+    method: 'cash',
+    type: 'consultation',
     description: '',
-    patientId: ''
+    patientId: 0,
+    metadata: {
+      customerName: '',
+      customerEmail: '',
+      returnUrl: window.location.origin + '/payment-success',
+      notifyUrl: window.location.origin + '/api/payments/webhook'
+    }
   };
 
   const [formData, setFormData] = useState<CreatePaymentDTO>(initialFormData);
@@ -38,10 +42,15 @@ export function PaymentForm({ patient, onSubmit, onCancel }: PaymentFormProps) {
     if (patient?.id) {
       setFormData(prev => ({
         ...prev,
-        patientId: patient.id.toString(),
-        currency: prev.currency || 'XOF',
-        method: prev.method || 'CINETPAY',
-        type: prev.type || 'SUBSCRIPTION'
+        patientId: Number(patient.id),
+        currency: 'CDF',
+        method: 'cinetpay',
+        type: 'consultation',
+        metadata: {
+          ...prev.metadata,
+          customerName: `${patient.firstName} ${patient.lastName}`,
+          customerEmail: patient.email || '',
+        }
       }));
     }
   }, [patient]);
@@ -118,18 +127,18 @@ export function PaymentForm({ patient, onSubmit, onCancel }: PaymentFormProps) {
       const paymentData = {
         ...formData,
         amount: Number(formData.amount),
-        patientId: formData.patientId.toString()
+        patientId: formData.patientId
       };
 
       console.log('Données de paiement à envoyer:', paymentData);
       
       const response = await onSubmit(paymentData);
       
-      if (response.success && response.paymentUrl) {
-        window.open(response.paymentUrl, '_blank');
+      if (response && response.metadata.cinetpayUrl) {
+        window.open(response.metadata.cinetpayUrl, '_blank');
         toast({
           title: "Succès",
-          description: "Redirection vers la page de paiement...",
+          description: "Redirection vers la page de paiement CinetPay...",
           variant: "default"
         });
       } else {
@@ -138,6 +147,7 @@ export function PaymentForm({ patient, onSubmit, onCancel }: PaymentFormProps) {
           description: response.message || "Échec de l'initialisation du paiement",
           variant: "destructive"
         });
+        console.error("Payment submission failed:", response.metadata);
       }
     } catch (error) {
       console.error("Payment submission error:", error);
@@ -172,20 +182,16 @@ export function PaymentForm({ patient, onSubmit, onCancel }: PaymentFormProps) {
           />
 
           <CurrencySelect
-            value={formData.currency}
-            onChange={(value) => handleChange('currency', value as PaymentCurrency)}
+            value={formData.currency as PaymentCurrency}
+            onChange={(value) => handleChange('currency', value)}
           />
+
         </div>
 
         <div className="space-y-4">
           <PaymentMethodSelect
             value={formData.method}
             onChange={(value) => handleChange('method', value as PaymentMethod)}
-          />
-
-          <PaymentTypeSelect
-            value={formData.type}
-            onChange={(value) => handleChange('type', value as PaymentType)}
           />
 
           <DescriptionInput

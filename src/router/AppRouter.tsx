@@ -7,6 +7,11 @@ import NotFound from "../pages/NotFound";
 import { useAuthStore } from "../store/authStore";
 import { useEffect } from "react";
 import PatientDetails from "../pages/PatientDetails";
+import PaymentSuccess from "../pages/PaymentSuccess";
+import TableauPayment from "@/pages/Payment/TableauPayment";
+import { PaymentsList } from "@/components/PaymentsList";
+import { PaymentDetail } from "@/components/PaymentDetail";
+import path from "path";
 
 function PrivateRoute({ children, allowedRoles }: { children: JSX.Element; allowedRoles?: string[] }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -79,6 +84,30 @@ const routes = [
         <PatientDetails />
       </PrivateRoute>
     ),
+  },
+  {
+    path: "/payment-success",
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'receptionist']}>
+        <PaymentSuccess />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: "/payments",
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'receptionist']}>
+        <PaymentsList />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: "/payments/:id",
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'receptionist']}>
+        <PaymentDetail />
+      </PrivateRoute>
+    )
   },
   { path: "*", element: <NotFound /> },
 ];

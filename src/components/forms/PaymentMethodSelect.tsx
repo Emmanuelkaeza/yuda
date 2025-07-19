@@ -16,10 +16,8 @@ export default function PaymentMethodSelect({ value, onChange }: PaymentMethodSe
           <SelectValue placeholder="Choisir une méthode" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="cinetpay">CinetPay</SelectItem>
-          <SelectItem value="card">Carte bancaire</SelectItem>
-          <SelectItem value="cash">Espèces</SelectItem>
-          <SelectItem value="mobile_money">Mobile Money</SelectItem>
+          <SelectItem value="cash">Paiement en espèces</SelectItem>
+          <SelectItem value="cinetpay">Paiement en ligne (CinetPay)</SelectItem>
         </SelectContent>
       </Select>
     </div>

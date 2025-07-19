@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuthStore } from "@/store/authStore";
+import api from "@/services/api";
 import { 
   Users, 
   UserCheck, 
@@ -27,25 +30,64 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
-const systemUsers = [
-  { id: "U001", name: "Dr. Sarah Johnson", email: "sarah.johnson@medicalcare.com", role: "Administrateur", status: "Actif", lastLogin: "Il y a 2h", department: "Direction" },
-  { id: "U002", name: "Marie Dubois", email: "marie.dubois@medicalcare.com", role: "Réceptionniste", status: "Actif", lastLogin: "Il y a 30min", department: "Accueil" },
-  { id: "U003", name: "Jean Martin", email: "jean.martin@medicalcare.com", role: "Médecin", status: "Actif", lastLogin: "Il y a 1h", department: "Cardiologie" },
-  { id: "U004", name: "Pierre Lefebvre", email: "pierre.lefebvre@medicalcare.com", role: "Comptable", status: "Inactif", lastLogin: "Il y a 2 jours", department: "Finance" },
-  { id: "U005", name: "Fatou Traoré", email: "fatou.traore@medicalcare.com", role: "Infirmière", status: "Actif", lastLogin: "Il y a 45min", department: "Urgences" }
-];
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastLogin: string;
+  department: string;
+}
 
 const userRoles = ["Administrateur", "Médecin", "Infirmière", "Réceptionniste", "Comptable", "Technicien"];
 const departments = ["Direction", "Cardiologie", "Urgences", "Pédiatrie", "Chirurgie", "Radiologie", "Finance", "Accueil"];
 
-export default function Admin() {
-  const [users, setUsers] = useState(systemUsers);
+export default function Admin(): JSX.Element {
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get('/users');
+        const userData = response.data.data;
+        
+        // Vérification et nettoyage des données
+        const validUsers = Array.isArray(userData) ? userData.map(user => ({
+          id: user?.id || '',
+          name: user?.name || '',
+          email: user?.email || '',
+          role: user?.role || '',
+          status: user?.status || 'Inactif',
+          lastLogin: user?.lastLogin || 'Jamais',
+          department: user?.department || ''
+        })) : [];
+        
+        setUsers(validUsers);
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer la liste des utilisateurs",
+          variant: "destructive"
+        });
+      }
+    };
+
+    fetchUsers();
+  }, [toast]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -57,13 +99,13 @@ export default function Admin() {
   });
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === "all" || user.role === selectedRole;
+    const matchesSearch = (user?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                         (user?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesRole = selectedRole === "all" || user?.role === selectedRole;
     return matchesSearch && matchesRole;
   });
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (newUser.password !== newUser.confirmPassword) {
       toast({
         title: "Erreur",
@@ -73,60 +115,104 @@ export default function Admin() {
       return;
     }
 
-    const user = {
-      id: `U${(users.length + 1).toString().padStart(3, '0')}`,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: "Actif",
-      lastLogin: "Jamais connecté",
-      department: newUser.department
-    };
+    try {
+      const response = await api.post('/users', {
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        department: newUser.department,
+        password: newUser.password
+      });
 
-    setUsers([...users, user]);
-    setNewUser({ name: "", email: "", role: "", department: "", password: "", confirmPassword: "" });
-    setIsAddUserOpen(false);
+      setUsers([...users, response.data.data]);
+      setNewUser({ name: "", email: "", role: "", department: "", password: "", confirmPassword: "" });
+      setIsAddUserOpen(false);
     
-    toast({
-      title: "Utilisateur ajouté",
-      description: `${user.name} a été ajouté avec succès`,
-    });
+      toast({
+        title: "Utilisateur ajouté",
+        description: `${newUser.name} a été ajouté avec succès`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de l'ajout de l'utilisateur",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditUser = () => {
-    const updatedUsers = users.map(user => 
-      user.id === selectedUser.id ? selectedUser : user
-    );
-    setUsers(updatedUsers);
-    setIsEditUserOpen(false);
-    setSelectedUser(null);
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await api.put(`/users/${selectedUser.id}`, {
+        name: selectedUser.name,
+        email: selectedUser.email,
+        role: selectedUser.role,
+        department: selectedUser.department
+      });
+
+      const response = await api.get('/users');
+      setUsers(response.data.data);
+      setIsEditUserOpen(false);
+      setSelectedUser(null);
     
-    toast({
-      title: "Utilisateur modifié",
-      description: "Les informations ont été mises à jour",
-    });
+      toast({
+        title: "Utilisateur modifié",
+        description: "Les informations ont été mises à jour",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la modification de l'utilisateur",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId));
-    toast({
-      title: "Utilisateur supprimé",
-      description: "L'utilisateur a été supprimé du système",
-    });
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await api.delete(`/users/${userId}`);
+      setUsers(users.filter(user => user.id !== userId));
+      toast({
+        title: "Utilisateur supprimé",
+        description: "L'utilisateur a été supprimé du système",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression de l'utilisateur",
+        variant: "destructive"
+      });
+    }
   };
 
-  const toggleUserStatus = (userId: string) => {
-    const updatedUsers = users.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === "Actif" ? "Inactif" : "Actif" }
-        : user
-    );
-    setUsers(updatedUsers);
+  const toggleUserStatus = async (userId: string) => {
+    try {
+      const userToUpdate = users.find(user => user.id === userId);
+      if (!userToUpdate) return;
+
+      const newStatus = userToUpdate.status === "Actif" ? "Inactif" : "Actif";
+      await api.patch(`/users/${userId}/toggle-status`, { status: newStatus });
+      
+      const updatedUsers = users.map(user => 
+        user.id === userId 
+          ? { ...user, status: newStatus }
+          : user
+      );
+      setUsers(updatedUsers);
     
-    toast({
-      title: "Statut mis à jour",
-      description: "Le statut de l'utilisateur a été modifié",
-    });
+      toast({
+        title: "Statut mis à jour",
+        description: "Le statut de l'utilisateur a été modifié",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la modification du statut",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -138,7 +224,11 @@ export default function Admin() {
             <h1 className="text-3xl font-bold text-foreground">Administration Système</h1>
             <p className="text-muted-foreground">Gestion des utilisateurs et permissions</p>
           </div>
-          <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+          <div className="flex gap-4">
+            <Button variant="medical" size="lg" onClick={handleLogout}>
+              Se déconnecter
+            </Button>
+            <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
             <DialogTrigger asChild>
               <Button variant="medical" size="lg">
                 <Plus className="h-4 w-4 mr-2" />
@@ -229,6 +319,7 @@ export default function Admin() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </div>
 

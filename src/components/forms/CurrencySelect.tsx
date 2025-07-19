@@ -16,9 +16,8 @@ export default function CurrencySelect({ value, onChange }: CurrencySelectProps)
           <SelectValue placeholder="Choisir une devise" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="XOF">XOF - Franc CFA</SelectItem>
+          <SelectItem value="CDF">CDF - Franc Congolais</SelectItem>
           <SelectItem value="USD">USD - Dollar US</SelectItem>
-          <SelectItem value="EUR">EUR - Euro</SelectItem>
         </SelectContent>
       </Select>
     </div>

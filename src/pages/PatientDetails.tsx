@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DollarSign } from "lucide-react";
 import { PaymentForm } from "@/components/forms/PaymentForm";
 import { paymentService } from "@/services/paymentService";
@@ -252,6 +252,7 @@ export default function PatientDetails() {
 
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent className="sm:max-w-[600px]">
+          <DialogTitle>Nouveau Paiement pour {patient.firstName} {patient.lastName}</DialogTitle>
           <PaymentForm
             patient={patient}
             onSubmit={handlePaymentSubmit}
