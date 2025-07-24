@@ -11,6 +11,8 @@ import PaymentSuccess from "../pages/PaymentSuccess";
 import TableauPayment from "@/pages/Payment/TableauPayment";
 import { PaymentsList } from "@/components/PaymentsList";
 import { PaymentDetail } from "@/components/PaymentDetail";
+import NewSubscription from "@/pages/NewSubscription";
+import Subscriptions from "@/pages/Subscriptions";
 import path from "path";
 
 function PrivateRoute({ children, allowedRoles }: { children: JSX.Element; allowedRoles?: string[] }) {
@@ -106,6 +108,22 @@ const routes = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'receptionist']}>
         <PaymentDetail />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: "/subscriptions/new",
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'receptionist']}>
+        <NewSubscription />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: "/subscriptions",
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'receptionist']}>
+        <Subscriptions />
       </PrivateRoute>
     )
   },

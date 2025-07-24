@@ -415,7 +415,11 @@ export default function Dashboard() {
                   <CreditCard className="h-4 w-4 mr-2" />
                   Gérer les Paiements
                 </Button>
-                <Button variant="success" className="w-full justify-start">
+                <Button variant="accent" className="w-full justify-start" onClick={() => navigate('/subscriptions')}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Gérer les Abonnements
+                </Button>
+                <Button variant="success" className="w-full justify-start" onClick={() => navigate('/subscriptions/new')}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Nouvel Abonnement
                 </Button>
