@@ -59,6 +59,8 @@ export const paymentService = {
     return response.data;
   },
 
+
+
   // Recherche de paiements
   searchPayments: async (query: {
     startDate?: string;

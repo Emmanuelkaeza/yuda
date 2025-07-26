@@ -3,14 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, RefreshCw, Loader2, Edit, Trash2 } from "lucide-react";
+import { UserPlus, Search, RefreshCw, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { subscriptionService } from "@/services";
+import { subscriptionService, patientService } from "@/services";
 
-import { Subscription } from '@/types';
+import { Subscription, Patient } from "@/types";
+
+interface SubscriptionWithPatient extends Subscription {
+  patientInfo?: Patient;
+}
 
 export default function Subscriptions() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionWithPatient[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -19,11 +23,20 @@ export default function Subscriptions() {
   const fetchSubscriptions = async (searchTerm = "") => {
     setLoading(true);
     try {
-      // Recherche côté API
-      const params = searchTerm ? { q: searchTerm } : {};
-      const data = await subscriptionService.getAllSubscriptions(params);
-      setSubscriptions(Array.isArray(data) ? data : []);
+      const data = await subscriptionService.getAllSubscriptions(searchTerm);
+      const enriched = await Promise.all(
+        (Array.isArray(data) ? data : []).map(async (sub) => {
+          try {
+            const patientInfo = await patientService.getById(sub.patientId);
+            return { ...sub, patientInfo };
+          } catch {
+            return { ...sub };
+          }
+        })
+      );
+      setSubscriptions(enriched);
     } catch (err) {
+      console.error("Erreur lors de la récupération des abonnements:", err);
       setSubscriptions([]);
     } finally {
       setLoading(false);
@@ -39,8 +52,6 @@ export default function Subscriptions() {
     await fetchSubscriptions(search);
   };
 
-
-
   return (
     <div className="min-h-screen bg-muted/20 p-6">
       <div className="max-w-6xl mx-auto">
@@ -49,11 +60,12 @@ export default function Subscriptions() {
             <h1 className="text-3xl font-bold text-foreground">Gestion des Abonnements</h1>
             <p className="text-muted-foreground">Recherchez, filtrez et gérez tous les abonnements patients</p>
           </div>
-          <Button variant="success" onClick={() => navigate("/subscriptions/new")}> 
+          <Button variant="success" onClick={() => navigate("/subscriptions/new")}>
             <UserPlus className="h-4 w-4 mr-2" />
             Nouvel Abonnement
           </Button>
         </div>
+
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -76,13 +88,22 @@ export default function Subscriptions() {
                 <Search className="h-4 w-4 mr-2" />
                 Rechercher
               </Button>
-              <Button type="button" variant="ghost" onClick={() => { setSearch(""); setRefreshing(true); fetchSubscriptions().then(() => setRefreshing(false)); }}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setSearch("");
+                  setRefreshing(true);
+                  fetchSubscriptions().then(() => setRefreshing(false));
+                }}
+              >
                 {refreshing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                 Actualiser
               </Button>
             </form>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Liste des abonnements</CardTitle>
@@ -113,9 +134,13 @@ export default function Subscriptions() {
                   <tbody>
                     {subscriptions.map(sub => (
                       <tr key={sub.id} className="border-b hover:bg-muted/30 transition-colors">
-                        <td className="p-2 font-medium">{sub.planDetails?.name || '-'}<br /><span className="text-xs text-muted-foreground">{sub.patientId}</span></td>
-                        <td className="p-2">{sub.planDetails?.name || '-'}</td>
-                        <td className="p-2">{sub.planDetails?.price} Fc</td>
+                        <td className="p-2 font-medium">
+                          {sub.patientInfo?.firstName +" "+ sub.patientInfo?.lastName || 'Inconnu'}
+                          <br />
+                          <span className="text-xs text-muted-foreground">{sub.patientInfo?.email || sub.patientId}</span>
+                        </td>
+                        <td className="p-2">{sub?.type || '-'}</td>
+                        <td className="p-2">{sub?.price} USD</td>
                         <td className="p-2">
                           <Badge variant={sub.status === 'active' ? 'success' : sub.status === 'pending' ? 'secondary' : 'destructive'}>
                             {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
@@ -127,15 +152,16 @@ export default function Subscriptions() {
                           <Button size="sm" variant="outline" onClick={() => navigate(`/subscriptions/${sub.id}`)}>
                             Détails
                           </Button>
-                          <Button size="sm" variant="secondary" onClick={() => navigate(`/subscriptions/${sub.id}/edit`)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={async () => {
-                            if(window.confirm('Confirmer la suppression de cet abonnement ?')){
-                              await subscriptionService.cancelSubscription(sub.id);
-                              fetchSubscriptions(search);
-                            }
-                          }}>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={async () => {
+                              if (window.confirm("Confirmer la suppression de cet abonnement ?")) {
+                                await subscriptionService.cancelSubscription(sub.id);
+                                fetchSubscriptions(search);
+                              }
+                            }}
+                          >Annuler 
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </td>

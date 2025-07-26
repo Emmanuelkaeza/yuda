@@ -459,12 +459,7 @@ export default function Dashboard() {
                           <div className="font-medium text-foreground text-sm">
                             {payment.amount.toLocaleString('fr-FR')} FC
                           </div>
-                          <Badge 
-                            variant={payment.status === 'completed' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {payment.status === 'completed' ? 'Payé' : 'En attente'}
-                          </Badge>
+                          
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">
