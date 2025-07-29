@@ -212,7 +212,6 @@ export function PatientForm({ patient, onSubmit, onCancel }: PatientFormProps) {
               <SelectContent>
                 <SelectItem value="male">Masculin</SelectItem>
                 <SelectItem value="female">Féminin</SelectItem>
-                <SelectItem value="other">Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>
